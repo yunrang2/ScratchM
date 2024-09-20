@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, initial-scale=1, minimum-scale=1, maximum-scale=1">
+    <title>모바일용 스크래치 복권 게임</title>
+    <style>
+        @font-face {
+            font-family: 'DNFBitBit';
+            src: url('https://raw.githubusercontent.com/yunrang2/upload/refs/heads/master/DNFBitBitv2.ttf');
+        }
+        body {
+            font-family: 'DNFBitBit', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom right, #e0eafc, #cfdef3);
+            overflow-x: hidden;
+        }
+        #game {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 90vw;  /* 화면 너비의 90% */
+            max-width: 600px; /* 최대 크기 600px */
+            height: 100%; /* 화면 높이에 맞춤 */
+            background: #fdfdfd;
+            border-radius: 20px;
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            padding: 20px;
+        }
+        #header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #header img {
+            width: 50%;  /* 타이틀 이미지 크기 */
+        }
+        #scratch-title {
+            font-size: 8vw;
+            color: #f768ef;
+            margin-left: 10px;
+            text-shadow: -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000, 2px 2px 0px #000;
+        }
+        .number-section {
+            display: none; /* 처음에는 숫자 영역 숨김 */
+        }
+        .number-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 3px solid #333; /* 테두리 */
+            padding: 10px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        #result-message {
+            font-size: 6vw;
+            color: #333;
+            margin-top: 20px;
+            font-weight: bold;
+            display: none;
+        }
+        #startButton {
+            margin: 20px auto;
+            align-self: center;
+            padding: 20px 40px;
+            font-size: 8vw; /* 버튼을 크게 표시 */
+            border-radius: 10px;
+            display: block;
+        }
+        .scratch-container {
+            display: none; /* 처음엔 숨기고 시작 버튼 클릭 후에 보여줌 */
+        }
+        .scratch-card {
+            width: 28vw;
+            height: 15vw;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            flex-direction: column;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.2);
+            background-color: #C0C0C0;
+            position: relative;
+            pointer-events: none; /* 시작 전엔 클릭 불가 */
+        }
+        .scratch-number {
+            font-size: 6vw;
+            font-weight: bold;
+            color: #000;
+            position: absolute;  /* 숫자가 카드 내에서 중앙에 위치하도록 */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);  /* 카드 중앙 정렬 */
+            visibility: hidden;  /* 처음에는 숫자를 숨김 */
+            z-index: 1;
+        }
+        .canvas-container img {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;  /* 덮개는 숫자 아래로 */
+        }
+        .play-button, .start-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: #fff;
+            font-size: 8vw;
+            border: none;
+            border-radius: 10px;
+            font-family: 'DNFBitBit', Arial, sans-serif;
+            cursor: pointer;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+            transition: background-color 0.3s, transform 0.3s;
+            display: none; /* 다시 플레이 버튼은 처음엔 숨김 */
+        }
+        .play-button:hover, .start-button:hover {
+            background-color: #45a049;
+            transform: translateY(-3px);
+        }
+
+        /* 미디어 쿼리: 더 작은 화면에서 이미지 크기 줄이기 */
+        @media (max-width: 480px) {
+            #header img {
+                width: 40%;  /* 모바일에서 더 작은 이미지 크기 */
+            }
+            .scratch-card {
+                width: 35vw;  /* 카드 크기 조정 */
+                height: 20vw;
+            }
+            .play-button, .start-button {
+                font-size: 10vw; /* 버튼 크기 더 크게 조정 */
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game">
+    <!-- 메인 상단 이미지 및 타이틀 -->
+    <div id="header">
+        <img src="https://raw.githubusercontent.com/yunrang2/upload/refs/heads/master/죽스%20타이틀.png" alt="죽스 타이틀">
+        <div id="scratch-title">행운복권</div>
+    </div>
+
+    <!-- 행운 숫자와 벌콘 숫자 -->
+    <div class="number-section">
+        <div class="number-box" id="lucky-number">
+            <div class="info">행운 숫자</div>
+            <div class="number-box"></div>
+        </div>
+
+        <!-- 결과 메시지: 행운 숫자와 벌콘 숫자 사이에 위치 -->
+        <div id="result-message"></div>
+
+        <div class="number-box" id="bonus-number">
+            <div class="info">벌콘 숫자</div>
+            <div class="number-box"></div>
+        </div>
+    </div>
+
+    <!-- 스크래치 카드 -->
+    <div class="scratch-container">
+        <div class="scratch-card" id="scratch1">
+            <div class="scratch-number"></div>
+            <div class="canvas-container">
+                <!-- 덮개 이미지 추가 -->
+                <img src="https://raw.githubusercontent.com/yunrang2/upload/refs/heads/master/죽스.png" alt="스크래치 덮개" class="cover-img">
+                <canvas class="scratch-canvas" width="180" height="100"></canvas>
+            </div>
+        </div>
+
+        <div class="scratch-card" id="scratch2">
+            <div class="scratch-number"></div>
+            <div class="canvas-container">
+                <img src="https://raw.githubusercontent.com/yunrang2/upload/refs/heads/master/죽스.png" alt="스크래치 덮개" class="cover-img">
+                <canvas class="scratch-canvas" width="180" height="100"></canvas>
+            </div>
+        </div>
+
+        <div class="scratch-card" id="scratch3">
+            <div class="scratch-number"></div>
+            <div class="canvas-container">
+                <img src="https://raw.githubusercontent.com/yunrang2/upload/refs/heads/master/죽스.png" alt="스크래치 덮개" class="cover-img">
+                <canvas class="scratch-canvas" width="180" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 시작 버튼 -->
+    <button class="start-button" id="startButton">시작</button>
+
+    <!-- 다시 플레이 버튼 -->
+    <button class="play-button" id="playButton">다시 플레이</button>
+</div>
+
+<script>
+    let luckyNumber = Math.floor(Math.random() * 9) + 1; // 행운 숫자
+    let bonusNumber;
+    
+    // 벌콘 숫자가 행운 숫자와 겹치지 않게 설정
+    do {
+        bonusNumber = Math.floor(Math.random() * 9) + 1;
+    } while (bonusNumber === luckyNumber);
+
+    let luckyAmount = randomAmount();
+
+    // 스크래치 숫자 설정 (행운숫자 10%, 벌콘숫자 30%, 꽝 60%)
+    let scratchNumbers = generateUniqueNumbers(3, 1, 9, [luckyNumber, bonusNumber]);
+    const randomValue = Math.random();
+    if (randomValue < 0.1) {
+        scratchNumbers[Math.floor(Math.random() * 3)] = luckyNumber; // 10% 확률로 행운 숫자 포함
+    } else if (randomValue < 0.4) {
+        scratchNumbers[Math.floor(Math.random() * 3)] = bonusNumber; // 30% 확률로 벌콘 숫자 포함
+    }
+
+    // 중복되지 않는 숫자 생성 함수
+    function generateUniqueNumbers(count, min, max, exclude = []) {
+        let numbers = new Set();
+        while (numbers.size < count) {
+            let num = Math.floor(Math.random() * (max - min + 1)) + min;
+            if (!exclude.includes(num)) {
+                numbers.add(num);
+            }
+        }
+        return Array.from(numbers);
+    }
+
+    // 금액을 한글로 변환
+    function convertAmountToKorean(amount) {
+        switch (amount) {
+            case 5000:
+                return "오천";
+            case 10000:
+                return "일만";
+            case 20000:
+                return "이만";
+            default:
+                return amount;
+        }
+    }
+
+    function randomAmount() {
+        const randomValue = Math.random();
+        if (randomValue < 0.6) {
+            return 5000; // 60% 확률로 5000
+        } else if (randomValue < 0.9) {
+            return 10000; // 30% 확률로 10000
+        } else {
+            return 20000; // 10% 확률로 20000
+        }
+    }
+
+    // 슬롯머신 효과 추가 (숫자와 금액 모두 적용)
+    function slotMachineEffect(elementId, finalValue) {
+        let count = 0;
+        const interval = setInterval(() => {
+            document.querySelector(`${elementId} .number-box`).textContent = Math.floor(Math.random() * 9) + 1;
+            count++;
+            if (count > 20) {
+                clearInterval(interval);
+                document.querySelector(`${elementId} .number-box`).textContent = finalValue;
+            }
+        }, 50);
+    }
+
+    const scratchCards = document.querySelectorAll('.scratch-card');
+    scratchCards.forEach((card, index) => {
+        const scratchNumberElement = card.querySelector('.scratch-number');
+        const scratchNumber = scratchNumbers[index];
+        scratchNumberElement.textContent = scratchNumber;
+
+        const coverImg = card.querySelector('.cover-img');
+        coverImg.addEventListener('click', function () {
+            // 덮개 이미지 사라짐
+            coverImg.style.display = 'none';
+
+            // 은색 배경으로 전환
+            card.style.backgroundColor = '#C0C0C0';
+
+            // 숫자 보이게 설정
+            scratchNumberElement.style.visibility = 'visible';
+        });
+    });
+
+    // 시작 버튼 클릭 시 슬롯머신 효과로 숫자 표시, 스크래치 카드 활성화
+    document.getElementById('startButton').addEventListener('click', () => {
+        // 숫자와 스크래치 카드 보여줌
+        document.getElementById('header').style.display = 'flex';
+        document.querySelector('.number-section').style.display = 'flex';
+        document.querySelector('.scratch-container').style.display = 'flex';
+
+        slotMachineEffect('#lucky-number', `${luckyNumber} (${convertAmountToKorean(luckyAmount)})`);
+        slotMachineEffect('#bonus-number', `${bonusNumber}`);
+
+        // 스크래치 카드 클릭 가능하도록 변경
+        scratchCards.forEach(card => {
+            card.style.pointerEvents = 'auto'; // 클릭 가능하도록 변경
+        });
+
+        // 시작 버튼 숨기기
+        document.getElementById('startButton').style.display = 'none'; // 시작 버튼 숨기기
+    });
+
+    // 모든 스크래치 카드가 긁히면 결과 표시
+    scratchCards.forEach((card) => {
+        card.addEventListener('click', () => {
+            const allScratched = Array.from(scratchCards).every(card => {
+                const coverImg = card.querySelector('.cover-img');
+                return coverImg.style.display === 'none';
+            });
+            if (allScratched) {
+                let resultText = '';
+
+                // 행운 숫자, 벌콘 숫자와 스크래치 숫자 비교
+                const hasLuckyMatch = scratchNumbers.includes(luckyNumber);
+                const hasBonusMatch = scratchNumbers.includes(bonusNumber);
+
+                if (hasLuckyMatch) {
+                    resultText = `당첨! (${convertAmountToKorean(luckyAmount)})`;
+                } else if (hasBonusMatch) {
+                    resultText = `벌콘!`;
+                } else {
+                    resultText = '꽝!';
+                }
+
+                // 결과 메시지 표시
+                const resultMessage = document.getElementById('result-message');
+                resultMessage.textContent = resultText;
+                resultMessage.style.display = 'block'; // 결과 메시지 보여줌
+
+                // 5초 후에 다시 플레이 버튼 표시
+                setTimeout(() => {
+                    document.getElementById('playButton').style.display = 'block';
+                }, 5000); // 5초 대기 후 다시 플레이 버튼 표시
+            }
+        });
+    });
+
+    // 다시 플레이 버튼 클릭 시 페이지 새로고침
+    document.getElementById('playButton').addEventListener('click', () => {
+        location.reload();
+    });
+</script>
+
+</body>
+</html>
