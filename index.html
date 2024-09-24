@@ -17,7 +17,10 @@
             height: 100vh;
             margin: 0;
             padding: 0;
-            background: linear-gradient(to bottom right, #e0eafc, #cfdef3);
+            background-image: url('https://raw.githubusercontent.com/yunrang2/upload/refs/heads/master/복권.webp');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             overflow-x: hidden;
         }
         #game {
@@ -28,7 +31,7 @@
             width: 90vw;
             max-width: 600px;
             height: 100%;
-            background: #fdfdfd;
+            background: rgba(255, 255, 255, 0.8);
             border-radius: 20px;
             box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
             text-align: center;
@@ -215,13 +218,14 @@
 
     let luckyAmount = randomAmount();
 
-    let scratchNumbers = generateUniqueNumbers(3, 1, 9, [luckyNumber, bonusNumber]);
+    // 확률 설정: 15% 당첨, 25% 벌콘, 60% 꽝
     const randomValue = Math.random();
-    if (randomValue < 0.1) {
-        scratchNumbers[Math.floor(Math.random() * 3)] = luckyNumber;
-    } else if (randomValue < 0.4) {
-        scratchNumbers[Math.floor(Math.random() * 3)] = bonusNumber;
+    if (randomValue < 0.15) {
+        scratchNumbers[Math.floor(Math.random() * 3)] = luckyNumber; // 15% 확률로 행운 숫자 포함
+    } else if (randomValue < 0.40) {
+        scratchNumbers[Math.floor(Math.random() * 3)] = bonusNumber; // 25% 확률로 벌콘 숫자 포함
     }
+    // 나머지 60%는 꽝
 
     const buttonSounds = [
         'https://raw.githubusercontent.com/yunrang2/upload/refs/heads/master/아리신음 (1).mp3',
@@ -303,8 +307,42 @@
             card.style.backgroundColor = '#C0C0C0';
             scratchNumberElement.style.visibility = 'visible';
             document.getElementById('scratchSound').play(); // 스크래치 카드 클릭 시 소리 재생
+
+            checkAllScratched(); // 긁은 후 결과 확인
         });
     });
+
+    function checkAllScratched() {
+        const allScratched = Array.from(scratchCards).every(card => {
+            const coverImg = card.querySelector('.cover-img');
+            return coverImg.style.display === 'none';
+        });
+
+        if (allScratched) {
+            displayResult();
+        }
+    }
+
+    function displayResult() {
+        let resultText = '';
+
+        const hasLuckyMatch = scratchNumbers.includes(luckyNumber);
+        const hasBonusMatch = scratchNumbers.includes(bonusNumber);
+
+        if (hasLuckyMatch) {
+            resultText = `당첨! (${convertAmountToKorean(luckyAmount)})`;
+        } else if (hasBonusMatch) {
+            resultText = `벌콘!`;
+        } else {
+            resultText = '꽝!';
+        }
+
+        const resultMessage = document.getElementById('result-message');
+        resultMessage.textContent = resultText;
+        resultMessage.style.display = 'block'; // 결과 메시지 보여줌
+
+        document.getElementById('playButton').style.display = 'block'; // 다시 플레이 버튼 즉시 표시
+    }
 
     document.getElementById('startButton').addEventListener('click', () => {
         document.getElementById('header').style.display = 'flex';
