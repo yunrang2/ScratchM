@@ -218,6 +218,9 @@
 
     let luckyAmount = randomAmount();
 
+    // scratchNumbers 배열 정의 추가
+    let scratchNumbers = generateUniqueNumbers(3, 1, 9, [luckyNumber, bonusNumber]);
+
     // 확률 설정: 15% 당첨, 25% 벌콘, 60% 꽝
     const randomValue = Math.random();
     if (randomValue < 0.15) {
